@@ -32,7 +32,7 @@ import { languages } from "./i18n";
 import { getAPIURL, getBasePath } from "./utils/url";
 
 interface ResourcePageProps {
-  resource: "spools" | "filaments" | "vendors" | "print-jobs";
+  resource: "spools" | "filaments" | "vendors" | "print-job";
   page: "list" | "create" | "edit" | "show";
   mode?: "create" | "clone";
 }
@@ -235,10 +235,10 @@ function App() {
                     <Route path="show/:id" element={<LoadableResourcePage resource="vendors" page="show" />} />
                   </Route>
                   <Route path="/print-job">
-                    <Route index element={<LoadableResourcePage resource="print-jobs" page="list" />} />
-                    <Route path="create" element={<LoadableResourcePage resource="print-jobs" page="create" mode="create" />} />
-                    <Route path="edit/:id" element={<LoadableResourcePage resource="print-jobs" page="edit" />} />
-                    <Route path="show/:id" element={<LoadableResourcePage resource="print-jobs" page="show" />} />
+                    <Route index element={<LoadableResourcePage resource="print-job" page="list" />} />
+                    <Route path="create" element={<LoadableResourcePage resource="print-job" page="create" mode="create" />} />
+                    <Route path="edit/:id" element={<LoadableResourcePage resource="print-job" page="edit" />} />
+                    <Route path="show/:id" element={<LoadableResourcePage resource="print-job" page="show" />} />
                   </Route>
                   <Route path="/settings/*" element={<LoadablePage name="settings" />} />
                   <Route path="/help" element={<LoadablePage name="help" />} />
