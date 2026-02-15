@@ -13,7 +13,7 @@ import { EntityType, useGetFields } from "../../utils/queryFields";
 import { useCurrencyFormatter } from "../../utils/settings";
 import { getBasePath } from "../../utils/url";
 import { IFilament } from "../filaments/model";
-import { IPrintJob } from "../print-jobs/model";
+import { IPrintJob } from "../print-job/model";
 import { setSpoolArchived, useSpoolAdjustModal } from "./functions";
 import { ISpool } from "./model";
 

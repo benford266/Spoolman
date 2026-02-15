@@ -85,14 +85,28 @@ export const PrintJobList = () => {
         dataIndex: "cost",
         title: t("print_job.fields.cost"),
         sorter: true,
-        render: (value?: number) => (value !== undefined ? currencyFormatter.format(value) : "-"),
+        render: (value?: number) => {
+          if (value === undefined || value === null) return "-";
+          try {
+            return String(currencyFormatter.format(value));
+          } catch (e) {
+            return `£${value.toFixed(2)}`;
+          }
+        },
       },
       {
         key: "revenue",
         dataIndex: "revenue",
         title: t("print_job.fields.revenue"),
         sorter: true,
-        render: (value?: number) => (value !== undefined ? currencyFormatter.format(value) : "-"),
+        render: (value?: number) => {
+          if (value === undefined || value === null) return "-";
+          try {
+            return String(currencyFormatter.format(value));
+          } catch (e) {
+            return `£${value.toFixed(2)}`;
+          }
+        },
       },
       {
         key: "profit",
@@ -100,7 +114,8 @@ export const PrintJobList = () => {
         render: (_: unknown, record: IPrintJob) => {
           if (record.revenue !== undefined && record.cost !== undefined) {
             const profit = record.revenue - record.cost;
-            return <Text type={profit >= 0 ? "success" : "danger"}>{currencyFormatter.format(profit)}</Text>;
+            const formattedProfit = String(currencyFormatter.format(profit));
+            return <Text type={profit >= 0 ? "success" : "danger"}>{formattedProfit}</Text>;
           }
           return "-";
         },
