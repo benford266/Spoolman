@@ -1,6 +1,6 @@
 import { useSelect, useTranslate } from "@refinedev/core";
 import { useQueries } from "@tanstack/react-query";
-import { Form, InputNumber, Modal, Radio } from "antd";
+import { Checkbox, Form, Input, InputNumber, Modal, Radio } from "antd";
 import { useForm } from "antd/es/form/Form";
 import type { InputNumberRef } from "rc-input-number";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -24,21 +24,36 @@ export async function setSpoolArchived(spool: ISpool, archived: boolean) {
   await fetch(request, init);
 }
 
+export interface UseSpoolFilamentOptions {
+  length?: number;
+  weight?: number;
+  jobName?: string;
+  jobRevenue?: number;
+  jobNotes?: string;
+  jobStartedAt?: string;
+  jobCompletedAt?: string;
+}
+
 /**
  * Use some spool filament from this spool. Either specify length or weight.
+ * Optionally create a print job record.
  * @param spool The spool
- * @param length The length to add/subtract from the spool, in mm
- * @param weight The weight to add/subtract from the spool, in g
+ * @param options Options for filament usage and optional job creation
  */
-export async function useSpoolFilament(spool: ISpool, length?: number, weight?: number) {
+export async function useSpoolFilament(spool: ISpool, options: UseSpoolFilamentOptions) {
   const init: RequestInit = {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      use_length: length,
-      use_weight: weight,
+      use_length: options.length,
+      use_weight: options.weight,
+      job_name: options.jobName,
+      job_revenue: options.jobRevenue,
+      job_notes: options.jobNotes,
+      job_started_at: options.jobStartedAt,
+      job_completed_at: options.jobCompletedAt,
     }),
   };
   const request = new Request(`${getAPIURL()}/spool/${spool.id}/use`);
@@ -202,14 +217,17 @@ export function useSpoolAdjustModal() {
 
   const [curSpool, setCurSpool] = useState<ISpool | null>(null);
   const [measurementType, setMeasurementType] = useState<MeasurementType>("length");
+  const [createJob, setCreateJob] = useState(false);
   const inputNumberRef = useRef<InputNumberRef | null>(null);
 
   const openSpoolAdjustModal = useCallback((spool: ISpool) => {
     setCurSpool(spool);
+    setCreateJob(false);
+    form.resetFields();
     setTimeout(() => {
       inputNumberRef.current?.focus();
     }, 0);
-  }, []);
+  }, [form]);
 
   const spoolAdjustModal = useMemo(() => {
     if (curSpool === null) {
@@ -226,15 +244,29 @@ export function useSpoolAdjustModal() {
         return;
       }
 
-      if (measurementType === "length") {
-        await useSpoolFilament(curSpool, value, undefined);
-      } else if (measurementType === "weight") {
-        await useSpoolFilament(curSpool, undefined, value);
-      } else {
+      const options: UseSpoolFilamentOptions = {};
+
+      if (measurementType === "measured_weight") {
         await useSpoolFilamentMeasure(curSpool, value);
+      } else {
+        if (measurementType === "length") {
+          options.length = value;
+        } else {
+          options.weight = value;
+        }
+
+        // Add job tracking fields if checkbox is checked
+        if (createJob) {
+          options.jobName = form.getFieldValue("job_name");
+          options.jobRevenue = form.getFieldValue("job_revenue");
+          options.jobNotes = form.getFieldValue("job_notes");
+        }
+
+        await useSpoolFilament(curSpool, options);
       }
 
       setCurSpool(null);
+      form.resetFields();
     };
 
     return (
@@ -254,10 +286,38 @@ export function useSpoolAdjustModal() {
           <Form.Item label={t("spool.form.adjust_filament_value")} name="filament_value">
             <InputNumber ref={inputNumberRef} precision={1} addonAfter={measurementType === "length" ? "mm" : "g"} />
           </Form.Item>
+
+          {measurementType !== "measured_weight" && (
+            <>
+              <Form.Item name="create_job" valuePropName="checked">
+                <Checkbox onChange={(e) => setCreateJob(e.target.checked)}>
+                  {t("spool.form.create_print_job")}
+                </Checkbox>
+              </Form.Item>
+
+              {createJob && (
+                <>
+                  <Form.Item
+                    label={t("print_job.fields.name")}
+                    name="job_name"
+                    rules={[{ required: true, message: t("print_job.errors.name_required") }]}
+                  >
+                    <Input placeholder={t("print_job.fields.name_placeholder")} maxLength={128} />
+                  </Form.Item>
+                  <Form.Item label={t("print_job.fields.revenue")} name="job_revenue">
+                    <InputNumber min={0} step={0.01} precision={2} placeholder="0.00" style={{ width: "100%" }} />
+                  </Form.Item>
+                  <Form.Item label={t("print_job.fields.notes")} name="job_notes">
+                    <Input.TextArea rows={2} maxLength={1024} placeholder={t("print_job.fields.notes_placeholder")} />
+                  </Form.Item>
+                </>
+              )}
+            </>
+          )}
         </Form>
       </Modal>
     );
-  }, [curSpool, measurementType, t]);
+  }, [curSpool, measurementType, createJob, t, form]);
 
   return {
     openSpoolAdjustModal,

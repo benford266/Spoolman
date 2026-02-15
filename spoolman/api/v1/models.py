@@ -427,3 +427,67 @@ class SettingEvent(Event):
 
     payload: SettingKV = Field(description="Updated setting.")
     resource: Literal["setting"] = Field(description="Resource type.")
+
+
+class PrintJob(BaseModel):
+    id: int = Field(description="Unique internal ID of this print job.")
+    registered: SpoolmanDateTime = Field(description="When the print job was registered in the database. UTC Timezone.")
+    spool_id: int = Field(description="The ID of the spool used for this print job.")
+    name: str = Field(max_length=128, description="Name/description of the print job.", examples=["Benchy"])
+    weight_used: float = Field(ge=0, description="Weight of filament used for this job in grams.", examples=[15.5])
+    started_at: SpoolmanDateTime | None = Field(
+        None,
+        description="When the print job was started. UTC Timezone.",
+    )
+    completed_at: SpoolmanDateTime | None = Field(
+        None,
+        description="When the print job was completed. UTC Timezone.",
+    )
+    cost: float | None = Field(
+        None,
+        ge=0,
+        description="Cost of filament used for this job in the system configured currency.",
+        examples=[0.31],
+    )
+    revenue: float | None = Field(
+        None,
+        ge=0,
+        description="Revenue from this job for ROI tracking in the system configured currency.",
+        examples=[5.0],
+    )
+    notes: str | None = Field(
+        None,
+        max_length=1024,
+        description="Free text notes about this print job.",
+        examples=["Printed for customer John"],
+    )
+    external_reference: str | None = Field(
+        None,
+        max_length=256,
+        description="External reference ID (e.g., from slicer or printer).",
+        examples=["benchy_v2.gcode"],
+    )
+
+    @staticmethod
+    def from_db(item: models.PrintJob) -> "PrintJob":
+        """Create a new Pydantic print job object from a database print job object."""
+        return PrintJob(
+            id=item.id,
+            registered=item.registered,
+            spool_id=item.spool_id,
+            name=item.name,
+            weight_used=item.weight_used,
+            started_at=item.started_at,
+            completed_at=item.completed_at,
+            cost=item.cost,
+            revenue=item.revenue,
+            notes=item.notes,
+            external_reference=item.external_reference,
+        )
+
+
+class PrintJobEvent(Event):
+    """Event."""
+
+    payload: PrintJob = Field(description="Updated print job.")
+    resource: Literal["print_job"] = Field(description="Resource type.")

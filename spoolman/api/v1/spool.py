@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field, field_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from spoolman.api.v1.models import Message, Spool, SpoolEvent
-from spoolman.database import spool
+from spoolman.database import print_job, spool
 from spoolman.database.database import get_db_session
 from spoolman.database.utils import SortOrder
 from spoolman.exceptions import ItemCreateError, SpoolMeasureError
@@ -105,6 +105,18 @@ class SpoolUpdateParameters(SpoolParameters):
 class SpoolUseParameters(BaseModel):
     use_length: float | None = Field(None, description="Length of filament to reduce by, in mm.", examples=[2.2])
     use_weight: float | None = Field(None, description="Filament weight to reduce by, in g.", examples=[5.3])
+    job_name: str | None = Field(
+        None,
+        max_length=128,
+        description="Optional: Name of the print job. If provided, a print job record will be created.",
+        examples=["Benchy"],
+    )
+    job_started_at: datetime | None = Field(None, description="Optional: When the print job was started.")
+    job_completed_at: datetime | None = Field(None, description="Optional: When the print job was completed.")
+    job_cost: float | None = Field(None, ge=0, description="Optional: Cost override for the job.")
+    job_revenue: float | None = Field(None, ge=0, description="Optional: Revenue from this job.")
+    job_notes: str | None = Field(None, max_length=1024, description="Optional: Notes about the job.")
+    job_external_reference: str | None = Field(None, max_length=256, description="Optional: External reference ID.")
 
 
 class SpoolMeasureParameters(BaseModel):
@@ -492,7 +504,8 @@ async def delete(
     "/{spool_id}/use",
     name="Use spool filament",
     description=(
-        "Use some length or weight of filament from the spool. Specify either a length or a weight, not both."
+        "Use some length or weight of filament from the spool. Specify either a length or a weight, not both. "
+        "Optionally create a print job record by providing job_name."
     ),
     response_model_exclude_none=True,
     response_model=Spool,
@@ -512,18 +525,42 @@ async def use(  # noqa: ANN201
             content={"message": "Only specify either use_weight or use_length."},
         )
 
+    weight_used = None
     if body.use_weight is not None:
+        weight_used = body.use_weight
         db_item = await spool.use_weight(db, spool_id, body.use_weight)
-        return Spool.from_db(db_item)
-
-    if body.use_length is not None:
+    elif body.use_length is not None:
+        # Calculate weight from length for job tracking
+        spool_item = await spool.get_by_id(db, spool_id)
+        from spoolman.math import weight_from_length
+        weight_used = weight_from_length(
+            length=body.use_length,
+            diameter=spool_item.filament.diameter,
+            density=spool_item.filament.density,
+        )
         db_item = await spool.use_length(db, spool_id, body.use_length)
-        return Spool.from_db(db_item)
+    else:
+        return JSONResponse(
+            status_code=400,
+            content={"message": "Either use_weight or use_length must be specified."},
+        )
 
-    return JSONResponse(
-        status_code=400,
-        content={"message": "Either use_weight or use_length must be specified."},
-    )
+    # Create print job if job_name is provided
+    if body.job_name is not None and weight_used is not None:
+        await print_job.create(
+            db=db,
+            spool_id=spool_id,
+            name=body.job_name,
+            weight_used=weight_used,
+            started_at=body.job_started_at,
+            completed_at=body.job_completed_at,
+            cost=body.job_cost,
+            revenue=body.job_revenue,
+            notes=body.job_notes,
+            external_reference=body.job_external_reference,
+        )
+
+    return Spool.from_db(db_item)
 
 
 @router.put(

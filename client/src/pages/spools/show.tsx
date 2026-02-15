@@ -1,9 +1,10 @@
 import { InboxOutlined, PrinterOutlined, ToTopOutlined, ToolOutlined } from "@ant-design/icons";
 import { DateField, NumberField, Show, TextField } from "@refinedev/antd";
-import { useInvalidate, useShow, useTranslate } from "@refinedev/core";
-import { Button, Modal, Typography } from "antd";
+import { useInvalidate, useList, useShow, useTranslate } from "@refinedev/core";
+import { Button, List as AntList, Modal, Typography } from "antd";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import { useNavigate } from "react-router";
 import { ExtraFieldDisplay } from "../../components/extraFields";
 import { NumberFieldUnit } from "../../components/numberField";
 import SpoolIcon from "../../components/spoolIcon";
@@ -12,6 +13,7 @@ import { EntityType, useGetFields } from "../../utils/queryFields";
 import { useCurrencyFormatter } from "../../utils/settings";
 import { getBasePath } from "../../utils/url";
 import { IFilament } from "../filaments/model";
+import { IPrintJob } from "../print-jobs/model";
 import { setSpoolArchived, useSpoolAdjustModal } from "./functions";
 import { ISpool } from "./model";
 
@@ -22,6 +24,7 @@ const { confirm } = Modal;
 
 export const SpoolShow = () => {
   const t = useTranslate();
+  const navigate = useNavigate();
   const extraFields = useGetFields(EntityType.spool);
   const currencyFormatter = useCurrencyFormatter();
   const invalidate = useInvalidate();
@@ -32,6 +35,16 @@ export const SpoolShow = () => {
   const { data, isLoading } = query;
 
   const record = data?.data;
+
+  // Fetch print jobs for this spool
+  const { data: printJobsData } = useList<IPrintJob>({
+    resource: "print-job",
+    filters: record ? [{ field: "spool_id", operator: "eq", value: record.id }] : [],
+    pagination: { pageSize: 100 },
+    queryOptions: {
+      enabled: !!record,
+    },
+  });
 
   const spoolPrice = (item?: ISpool) => {
     const price = item?.price ?? item?.filament.price;
@@ -219,6 +232,47 @@ export const SpoolShow = () => {
       <TextField value={enrichText(record?.comment)} />
       <Title level={5}>{t("spool.fields.archived")}</Title>
       <TextField value={record?.archived ? t("yes") : t("no")} />
+
+      <Title level={4}>{t("print_job.print_job")}</Title>
+      {printJobsData?.data && printJobsData.data.length > 0 ? (
+        <AntList
+          dataSource={printJobsData.data}
+          renderItem={(job: IPrintJob) => {
+            const profit = job.revenue !== undefined && job.cost !== undefined ? job.revenue - job.cost : undefined;
+            return (
+              <AntList.Item
+                actions={[
+                  <Button key="view" type="link" onClick={() => navigate(`/print-job/show/${job.id}`)}>
+                    {t("buttons.show")}
+                  </Button>,
+                ]}
+              >
+                <AntList.Item.Meta
+                  title={<strong>{job.name}</strong>}
+                  description={
+                    <div>
+                      <div>{t("print_job.fields.weight_used")}: {job.weight_used.toFixed(1)} g</div>
+                      {job.cost !== undefined && <div>{t("print_job.fields.cost")}: {currencyFormatter.format(job.cost)}</div>}
+                      {job.revenue !== undefined && <div>{t("print_job.fields.revenue")}: {currencyFormatter.format(job.revenue)}</div>}
+                      {profit !== undefined && (
+                        <div>
+                          <Typography.Text type={profit >= 0 ? "success" : "danger"}>
+                            {t("print_job.fields.profit")}: {currencyFormatter.format(profit)}
+                          </Typography.Text>
+                        </div>
+                      )}
+                      {job.completed_at && <div>{t("print_job.fields.completed_at")}: {dayjs(job.completed_at).format("YYYY-MM-DD HH:mm")}</div>}
+                    </div>
+                  }
+                />
+              </AntList.Item>
+            );
+          }}
+        />
+      ) : (
+        <Typography.Text type="secondary">{t("print_job.no_jobs")}</Typography.Text>
+      )}
+
       <Title level={4}>{t("settings.extra_fields.tab")}</Title>
       {extraFields?.data?.map((field, index) => (
         <ExtraFieldDisplay key={index} field={field} value={record?.extra[field.key]} />

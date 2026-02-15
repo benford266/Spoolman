@@ -81,6 +81,7 @@ class Spool(Base):
         cascade="save-update, merge, delete, delete-orphan",
         lazy="joined",
     )
+    print_jobs: Mapped[list["PrintJob"]] = relationship(back_populates="spool")
 
 
 class Setting(Base):
@@ -116,3 +117,20 @@ class SpoolField(Base):
     spool: Mapped["Spool"] = relationship(back_populates="extra")
     key: Mapped[str] = mapped_column(String(64), primary_key=True, index=True)
     value: Mapped[str] = mapped_column(Text())
+
+
+class PrintJob(Base):
+    __tablename__ = "print_job"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    registered: Mapped[datetime] = mapped_column()
+    spool_id: Mapped[int] = mapped_column(ForeignKey("spool.id", ondelete="CASCADE"), index=True)
+    spool: Mapped["Spool"] = relationship(back_populates="print_jobs")
+    name: Mapped[str] = mapped_column(String(128))
+    weight_used: Mapped[float] = mapped_column()
+    started_at: Mapped[datetime | None] = mapped_column()
+    completed_at: Mapped[datetime | None] = mapped_column()
+    cost: Mapped[float | None] = mapped_column(comment="Cost of filament used for this job.")
+    revenue: Mapped[float | None] = mapped_column(comment="Revenue from this job for ROI tracking.")
+    notes: Mapped[str | None] = mapped_column(String(1024))
+    external_reference: Mapped[str | None] = mapped_column(String(256))

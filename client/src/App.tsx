@@ -9,6 +9,7 @@ import {
   FileOutlined,
   HighlightOutlined,
   HomeOutlined,
+  ProjectOutlined,
   QuestionOutlined,
   TableOutlined,
   ToolOutlined,
@@ -31,7 +32,7 @@ import { languages } from "./i18n";
 import { getAPIURL, getBasePath } from "./utils/url";
 
 interface ResourcePageProps {
-  resource: "spools" | "filaments" | "vendors";
+  resource: "spools" | "filaments" | "vendors" | "print-jobs";
   page: "list" | "create" | "edit" | "show";
   mode?: "create" | "clone";
 }
@@ -143,6 +144,17 @@ function App() {
                   },
                 },
                 {
+                  name: "print-job",
+                  list: "/print-job",
+                  create: "/print-job/create",
+                  edit: "/print-job/edit/:id",
+                  show: "/print-job/show/:id",
+                  meta: {
+                    canDelete: true,
+                    icon: <ProjectOutlined />,
+                  },
+                },
+                {
                   name: "locations",
                   list: "/locations",
                   meta: {
@@ -221,6 +233,12 @@ function App() {
                     />
                     <Route path="edit/:id" element={<LoadableResourcePage resource="vendors" page="edit" />} />
                     <Route path="show/:id" element={<LoadableResourcePage resource="vendors" page="show" />} />
+                  </Route>
+                  <Route path="/print-job">
+                    <Route index element={<LoadableResourcePage resource="print-jobs" page="list" />} />
+                    <Route path="create" element={<LoadableResourcePage resource="print-jobs" page="create" mode="create" />} />
+                    <Route path="edit/:id" element={<LoadableResourcePage resource="print-jobs" page="edit" />} />
+                    <Route path="show/:id" element={<LoadableResourcePage resource="print-jobs" page="show" />} />
                   </Route>
                   <Route path="/settings/*" element={<LoadablePage name="settings" />} />
                   <Route path="/help" element={<LoadablePage name="help" />} />
