@@ -99,3 +99,5 @@ export const PrintJobCreate = (props: IResourceComponentsProps & CreateProps) =>
     </Create>
   );
 };
+
+export default PrintJobCreate;

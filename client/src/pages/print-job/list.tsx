@@ -192,3 +192,5 @@ export const PrintJobList = () => {
     </List>
   );
 };
+
+export default PrintJobList;

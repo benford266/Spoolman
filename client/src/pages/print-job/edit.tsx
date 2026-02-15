@@ -119,3 +119,5 @@ export const PrintJobEdit = (props: IResourceComponentsProps) => {
     </Edit>
   );
 };
+
+export default PrintJobEdit;

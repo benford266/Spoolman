@@ -77,3 +77,5 @@ export const PrintJobShow = () => {
     </Show>
   );
 };
+
+export default PrintJobShow;
