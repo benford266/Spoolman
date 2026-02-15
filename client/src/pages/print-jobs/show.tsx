@@ -12,13 +12,12 @@ export const PrintJobShow = () => {
   const t = useTranslate();
   const navigate = useNavigate();
   const currencyFormatter = useCurrencyFormatter();
-  const { queryResult } = useShow<IPrintJob>();
-  const { data, isLoading } = queryResult;
+  const { query } = useShow<IPrintJob>();
+  const { data, isLoading } = query;
   const record = data?.data;
 
-  const profit = record?.revenue !== undefined && record?.cost !== undefined
-    ? record.revenue - record.cost
-    : undefined;
+  const profit =
+    record?.revenue !== undefined && record?.cost !== undefined ? record.revenue - record.cost : undefined;
 
   return (
     <Show
@@ -46,16 +45,14 @@ export const PrintJobShow = () => {
             {record?.weight_used.toFixed(1)} g
           </Descriptions.Item>
           <Descriptions.Item label={t("print_job.fields.cost")}>
-            {record?.cost !== undefined ? currencyFormatter(record.cost) : "-"}
+            {record?.cost !== undefined ? currencyFormatter.format(record.cost) : "-"}
           </Descriptions.Item>
           <Descriptions.Item label={t("print_job.fields.revenue")}>
-            {record?.revenue !== undefined ? currencyFormatter(record.revenue) : "-"}
+            {record?.revenue !== undefined ? currencyFormatter.format(record.revenue) : "-"}
           </Descriptions.Item>
           {profit !== undefined && (
             <Descriptions.Item label={t("print_job.fields.profit")}>
-              <Text type={profit >= 0 ? "success" : "danger"}>
-                {currencyFormatter(profit)}
-              </Text>
+              <Text type={profit >= 0 ? "success" : "danger"}>{currencyFormatter.format(profit)}</Text>
             </Descriptions.Item>
           )}
           <Descriptions.Item label={t("print_job.fields.started_at")}>

@@ -1,18 +1,20 @@
-import { Edit, useForm, useSelect } from "@refinedev/antd";
-import { useTranslate } from "@refinedev/core";
+import { Edit, useForm } from "@refinedev/antd";
+import { HttpError, IResourceComponentsProps, useTranslate } from "@refinedev/core";
+import { useSelect } from "@refinedev/core";
 import { DatePicker, Form, Input, InputNumber, Select } from "antd";
 import dayjs from "dayjs";
 import { IPrintJob } from "./model";
+import { ISpool } from "../spools/model";
 
-export const PrintJobEdit = () => {
+export const PrintJobEdit = (props: IResourceComponentsProps) => {
   const t = useTranslate();
-  const { formProps, saveButtonProps, queryResult } = useForm<IPrintJob>();
 
-  const { selectProps: spoolSelectProps } = useSelect({
+  const { formProps, saveButtonProps } = useForm<IPrintJob, HttpError, IPrintJob, IPrintJob>();
+
+  const { options: spoolOptions } = useSelect<ISpool>({
     resource: "spool",
     optionLabel: (item) => `#${item.id} - ${item.filament?.name || "Unknown"}`,
     optionValue: "id",
-    defaultValue: queryResult?.data?.data?.spool_id,
   });
 
   return (
@@ -21,13 +23,13 @@ export const PrintJobEdit = () => {
         {...formProps}
         layout="vertical"
         onFinish={(values) => {
-          // Convert dayjs objects to ISO strings
+          // Convert dayjs objects to ISO strings if they exist
           const formattedValues = {
             ...values,
-            started_at: values.started_at ? dayjs(values.started_at).toISOString() : undefined,
-            completed_at: values.completed_at ? dayjs(values.completed_at).toISOString() : undefined,
+            started_at: values.started_at ? (dayjs.isDayjs(values.started_at) ? values.started_at.toISOString() : values.started_at) : undefined,
+            completed_at: values.completed_at ? (dayjs.isDayjs(values.completed_at) ? values.completed_at.toISOString() : values.completed_at) : undefined,
           };
-          return formProps.onFinish?.(formattedValues as any);
+          return formProps.onFinish?.(formattedValues);
         }}
       >
         <Form.Item
@@ -36,7 +38,7 @@ export const PrintJobEdit = () => {
           rules={[{ required: true, message: t("print_job.errors.spool_required") }]}
         >
           <Select
-            {...spoolSelectProps}
+            options={spoolOptions}
             placeholder={t("print_job.fields.spool_placeholder")}
             showSearch
             filterOption={(input, option) =>
@@ -99,31 +101,15 @@ export const PrintJobEdit = () => {
         </Form.Item>
 
         <Form.Item label={t("print_job.fields.cost")} name="cost">
-          <InputNumber
-            min={0}
-            step={0.01}
-            precision={2}
-            placeholder="0.00"
-            style={{ width: "100%" }}
-          />
+          <InputNumber min={0} step={0.01} precision={2} placeholder="0.00" style={{ width: "100%" }} />
         </Form.Item>
 
         <Form.Item label={t("print_job.fields.revenue")} name="revenue">
-          <InputNumber
-            min={0}
-            step={0.01}
-            precision={2}
-            placeholder="0.00"
-            style={{ width: "100%" }}
-          />
+          <InputNumber min={0} step={0.01} precision={2} placeholder="0.00" style={{ width: "100%" }} />
         </Form.Item>
 
         <Form.Item label={t("print_job.fields.notes")} name="notes">
-          <Input.TextArea
-            rows={4}
-            maxLength={1024}
-            placeholder={t("print_job.fields.notes_placeholder")}
-          />
+          <Input.TextArea rows={4} maxLength={1024} placeholder={t("print_job.fields.notes_placeholder")} />
         </Form.Item>
 
         <Form.Item label={t("print_job.fields.external_reference")} name="external_reference">

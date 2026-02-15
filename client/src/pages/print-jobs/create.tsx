@@ -1,14 +1,21 @@
-import { Create, useForm, useSelect } from "@refinedev/antd";
-import { useTranslate } from "@refinedev/core";
+import { Create, useForm } from "@refinedev/antd";
+import { HttpError, IResourceComponentsProps, useTranslate } from "@refinedev/core";
+import { useSelect } from "@refinedev/core";
 import { DatePicker, Form, Input, InputNumber, Select } from "antd";
 import dayjs from "dayjs";
 import { IPrintJob } from "./model";
+import { ISpool } from "../spools/model";
 
-export const PrintJobCreate = () => {
+interface CreateProps {
+  mode: "create";
+}
+
+export const PrintJobCreate = (props: IResourceComponentsProps & CreateProps) => {
   const t = useTranslate();
-  const { formProps, saveButtonProps, form } = useForm<IPrintJob>();
 
-  const { selectProps: spoolSelectProps } = useSelect({
+  const { formProps, saveButtonProps } = useForm<IPrintJob, HttpError, IPrintJob, IPrintJob>();
+
+  const { options: spoolOptions } = useSelect<ISpool>({
     resource: "spool",
     optionLabel: (item) => `#${item.id} - ${item.filament?.name || "Unknown"}`,
     optionValue: "id",
@@ -23,7 +30,7 @@ export const PrintJobCreate = () => {
           rules={[{ required: true, message: t("print_job.errors.spool_required") }]}
         >
           <Select
-            {...spoolSelectProps}
+            options={spoolOptions}
             placeholder={t("print_job.fields.spool_placeholder")}
             showSearch
             filterOption={(input, option) =>
@@ -74,31 +81,15 @@ export const PrintJobCreate = () => {
         </Form.Item>
 
         <Form.Item label={t("print_job.fields.cost")} name="cost">
-          <InputNumber
-            min={0}
-            step={0.01}
-            precision={2}
-            placeholder="0.00"
-            style={{ width: "100%" }}
-          />
+          <InputNumber min={0} step={0.01} precision={2} placeholder="0.00" style={{ width: "100%" }} />
         </Form.Item>
 
         <Form.Item label={t("print_job.fields.revenue")} name="revenue">
-          <InputNumber
-            min={0}
-            step={0.01}
-            precision={2}
-            placeholder="0.00"
-            style={{ width: "100%" }}
-          />
+          <InputNumber min={0} step={0.01} precision={2} placeholder="0.00" style={{ width: "100%" }} />
         </Form.Item>
 
         <Form.Item label={t("print_job.fields.notes")} name="notes">
-          <Input.TextArea
-            rows={4}
-            maxLength={1024}
-            placeholder={t("print_job.fields.notes_placeholder")}
-          />
+          <Input.TextArea rows={4} maxLength={1024} placeholder={t("print_job.fields.notes_placeholder")} />
         </Form.Item>
 
         <Form.Item label={t("print_job.fields.external_reference")} name="external_reference">

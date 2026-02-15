@@ -37,7 +37,7 @@ export const SpoolShow = () => {
   const record = data?.data;
 
   // Fetch print jobs for this spool
-  const { data: printJobsData } = useList<IPrintJob>({
+  const printJobsResult = useList<IPrintJob>({
     resource: "print-job",
     filters: record ? [{ field: "spool_id", operator: "eq", value: record.id }] : [],
     pagination: { pageSize: 100 },
@@ -45,6 +45,7 @@ export const SpoolShow = () => {
       enabled: !!record,
     },
   });
+  const printJobsData = printJobsResult.result.data;
 
   const spoolPrice = (item?: ISpool) => {
     const price = item?.price ?? item?.filament.price;
@@ -234,9 +235,9 @@ export const SpoolShow = () => {
       <TextField value={record?.archived ? t("yes") : t("no")} />
 
       <Title level={4}>{t("print_job.print_job")}</Title>
-      {printJobsData?.data && printJobsData.data.length > 0 ? (
+      {printJobsData && printJobsData.length > 0 ? (
         <AntList
-          dataSource={printJobsData.data}
+          dataSource={printJobsData}
           renderItem={(job: IPrintJob) => {
             const profit = job.revenue !== undefined && job.cost !== undefined ? job.revenue - job.cost : undefined;
             return (
