@@ -6,6 +6,7 @@ import { ErrorComponent } from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
 
 import {
+  BarChartOutlined,
   FileOutlined,
   HighlightOutlined,
   HomeOutlined,
@@ -108,6 +109,14 @@ function App() {
                   },
                 },
                 {
+                  name: "overview",
+                  list: "/overview",
+                  meta: {
+                    canDelete: false,
+                    icon: <BarChartOutlined />,
+                  },
+                },
+                {
                   name: "spool",
                   list: "/spool",
                   create: "/spool/create",
@@ -194,6 +203,7 @@ function App() {
                   }
                 >
                   <Route index element={<LoadablePage name="home" />} />
+                  <Route path="/overview" element={<LoadablePage name="overview" />} />
                   <Route path="/spool">
                     <Route index element={<LoadableResourcePage resource="spools" page="list" />} />
                     <Route
