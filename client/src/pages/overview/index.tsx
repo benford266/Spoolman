@@ -105,7 +105,7 @@ export const Overview = () => {
     const totalSpools = nonArchived.length;
 
     return { groups, totalRemainingWeight, totalSpools };
-  }, [spoolsData]);
+  }, [spoolsResult]);
 
   const columns = [
     {
