@@ -45,7 +45,7 @@ function getColorLabel(group: FilamentGroup): string {
 export const Overview = () => {
   const { token } = useToken();
 
-  const { data: spoolsData, isLoading } = useList<ISpool>({
+  const { result: spoolsResult, query: spoolsQuery } = useList<ISpool>({
     resource: "spool",
     pagination: { pageSize: 10000 },
     meta: {
@@ -55,9 +55,11 @@ export const Overview = () => {
     },
   });
 
+  const isLoading = spoolsQuery.isLoading;
+
   const { groups, totalRemainingWeight, totalSpools } = useMemo(() => {
-    const spools = spoolsData?.data ?? [];
-    const nonArchived = spools.filter((s) => !s.archived);
+    const spools: ISpool[] = spoolsResult?.data ?? [];
+    const nonArchived = spools.filter((s: ISpool) => !s.archived);
 
     const groupMap = new Map<string, FilamentGroup>();
 
@@ -99,7 +101,7 @@ export const Overview = () => {
       return getColorLabel(a).localeCompare(getColorLabel(b));
     });
 
-    const totalRemainingWeight = nonArchived.reduce((sum, s) => sum + (s.remaining_weight ?? 0), 0);
+    const totalRemainingWeight = nonArchived.reduce((sum: number, s: ISpool) => sum + (s.remaining_weight ?? 0), 0);
     const totalSpools = nonArchived.length;
 
     return { groups, totalRemainingWeight, totalSpools };
